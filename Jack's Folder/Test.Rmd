@@ -18,7 +18,7 @@ library(janitor)
 
 
 ```{r}
-read.csv("~/Desktop/BIS15W2025_group7/sleep_cycle_productivity.csv")
+sleeping <- read.csv("~/Desktop/BIS15W2025_group7/sleep_cycle_productivity.csv") %>% clean_names()
 ```
 
 ## Including Plots
