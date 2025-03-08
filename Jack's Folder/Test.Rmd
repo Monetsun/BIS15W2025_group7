@@ -14,20 +14,106 @@ library(tidyverse)
 library(RColorBrewer)
 library(paletteer)
 library(janitor)
+library(shiny)
+library(shinydashboard)
+library(shinythemes)
 ```
 
 
 ```{r}
-sleeping <- read.csv("~/Documents/GitHub/BIS15W2025_group7/Jack's Folder/sleep_cycle_productivity.csv") %>% clean_names()
+sleeping <- read.csv("/Users/monobuoy/Desktop/BIS15W2025_group7/sleep_cycle_productivity.csv") %>% clean_names()
 sleeping
 ```
+1. Sleep and Productivity:
+Does total sleep duration (total_sleep_hours) influence productivity scores (productivity_score)?
 
-## Including Plots
 
-You can also embed plots, for example:
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+#caffeine intake vs productivity
+```{r}
+# sleeping$caffeine_group <- cut(sleeping$caffeine_intake_mg, breaks = seq(0, 300, by = 60), include.lowest = TRUE, labels = c("0-60", "60-120", "120-180", "180-240", "240-300"))
+# sleeping$age <- as.numeric(as.character(sleeping$age))
+# sleeping$age <- cut(sleeping$age, breaks = seq(18, 60, by = 8.4), include.lowest = TRUE, labels = c("young", "young2", "middle", "middle2", "elder"))
+# sleeping %>% 
+#   filter(gender!="Other") %>% 
+#   filter(total_sleep_hours<5) %>% 
+# 
+# ggplot(aes(x = caffeine_group, y = productivity_score)) +
+#   geom_boxplot() +
+#   labs(title = "Caffeine Intake vs Productivity Score", 
+#        x = "Caffeine Intake (mg)", 
+#        y = "Productivity Score") +
+#   theme_minimal()
+# 
+
+```
+
+
+```{r}
+library(shiny)
+library(dplyr)
+library(ggplot2)
+
+# Define UI
+ui <- fluidPage(
+  
+  titlePanel("Sleep, Productivity & Well-being"),
+  
+  sidebarLayout(
+    sidebarPanel(
+      sliderInput("sleep_filter", 
+                  "Filter by Total Sleep Hours:", 
+                  min = 4, max = 10, value = 6, step = 0.5)
+    ),
+    
+    mainPanel(
+      fluidRow(
+        column(6, plotOutput("plot_productivity", width = "100%", height = "700px")),  # Left density plot
+        column(6, plotOutput("plot_stress", width = "100%", height = "700px"))  # Right density plot
+      )
+    )
+  )
+)
+
+# Define Server
+server <- function(input, output, session) {
+  
+  session$onSessionEnded(stopApp) # Stop the app when closed
+  
+  # 📌 First Density Plot: Productivity Score by Gender
+  output$plot_productivity <- renderPlot({
+    sleeping %>% 
+      filter(gender != "Other") %>% 
+      filter(total_sleep_hours >= as.numeric(input$sleep_filter) - 0.25 & 
+             total_sleep_hours <= as.numeric(input$sleep_filter) + 0.25) %>%  # Noise range ±0.25
+      ggplot(aes(x = productivity_score, fill = gender)) +
+      geom_density(alpha = 0.5) +  
+      scale_fill_manual(values = c("#e74c3c", "#3498db")) +
+      labs(title = paste("Productivity Score Density (Sleep:", input$sleep_filter, "±0.25 hrs)"), 
+           x = "Productivity Score", 
+           y = "Density") +
+      theme_minimal()
+  })
+  
+  # 📌 Second Density Plot: Stress Level by Gender
+  output$plot_stress <- renderPlot({
+    sleeping %>% 
+      filter(gender != "Other") %>% 
+      filter(total_sleep_hours >= as.numeric(input$sleep_filter) - 0.25 & 
+             total_sleep_hours <= as.numeric(input$sleep_filter) + 0.25) %>%  # Noise range ±0.25 
+      ggplot(aes(x = stress_level, fill = gender)) +
+      geom_density(alpha = 0.5) +  
+      scale_fill_manual(values = c("#2ecc71", "#9b59b6")) +
+      labs(title = "Stress Level Density by Gender", 
+           x = "Stress Level", 
+           y = "Density") +
+      theme_minimal()
+  })
+}
+
+# Run the Shiny App
+shinyApp(ui, server)
+
 ```
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
