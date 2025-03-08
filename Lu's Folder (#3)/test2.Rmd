@@ -1,0 +1,246 @@
+---
+title: "test2"
+author: "Lu Liang"
+date: "2025-03-08"
+output: html_document
+---
+
+## Load the Libraries  
+```{r message=FALSE, warning=FALSE}
+library(tidyverse)
+library(shiny)
+library(shinydashboard)
+require(janitor)
+library(palmerpenguins)
+```
+
+```{r}
+sleep <- read_csv("~/Desktop/BIS15W2025_group7/Lu's Folder (#3)/sleep_cycle_productivity.csv") %>% 
+  clean_names()
+sleep$sleep_quality <- as_factor(sleep$sleep_quality)
+```
+##Caffeine
+```{r}
+sleep_caffeine_group <- sleep %>%
+  mutate(caffeine_bin = cut(caffeine_intake_mg,
+                            breaks = c(-1,50, 100, 150, 200, 250, 300),
+                            labels = c("0-50" ,"51-100","101-150","151-200","201-250","251-300"))) 
+
+```
+
+```{r}
+sleep_caffeine_group %>% 
+  group_by(caffeine_bin) %>% 
+  summarise(mean=mean(sleep_start_time))
+```
+
+```{r}
+
+sleep_caffeine_group <- sleep_caffeine_group %>%
+  mutate(caffeine_bin = factor(caffeine_bin, levels = c("0-50", "51-100", "101-150", "151-200", "201-250", "251-300")))
+
+sleep_caffeine_summary <- sleep_caffeine_group %>% 
+  group_by(caffeine_bin) %>% 
+  summarise(mean_sleep_start = mean(sleep_start_time, na.rm = TRUE))  
+
+ggplot(sleep_caffeine_summary, aes(x = caffeine_bin, y = mean_sleep_start)) +
+  geom_point() +
+  geom_smooth(aes(group = 1), method = "lm",se=F) + 
+  theme_minimal()+
+  labs(title = "Caffeine Intake Level vs. Average Sleep Start Time",
+       x = "Caffeine Intake (mg) Level",
+       y = "Average Sleep Start Time")+
+  theme(plot.title=element_text(size=rel(1.5), hjust=.5))
+```
+```{r}
+sleep_caffeine_group <- sleep_caffeine_group %>%
+  mutate(caffeine_bin = factor(caffeine_bin, levels = c("0-50", "51-100", "101-150", "151-200", "201-250", "251-300")))
+
+sleep_caffeine_summary <- sleep_caffeine_group %>% 
+  group_by(caffeine_bin) %>% 
+  summarise(mean_sleep_start = mean(sleep_start_time, na.rm = TRUE))  
+
+# 创建图形
+p3 <- ggplot(sleep_caffeine_summary, aes(x = caffeine_bin, y = mean_sleep_start)) +
+  geom_point() +
+  geom_smooth(aes(group = 1), method = "lm", se = F) + 
+  theme_minimal() +
+  labs(title = "Caffeine Intake Level vs. Average Sleep Start Time",
+       x = "Caffeine Intake (mg) Level",
+       y = "Average Sleep Start Time") +
+  theme(plot.title = element_text(size = rel(1.5), hjust = .5))
+
+# 保存图形为 PNG 文件
+ggsave("caffeine_vs_sleep_start_time.png", plot = p3, width = 8, height = 6)
+```
+
+```{r}
+sleep2 <- sleep %>% 
+  select(caffeine_intake_mg, sleep_quality) %>%
+  mutate(sleep_quality = as.numeric(sleep_quality)) 
+
+sleep2 %>% 
+  group_by(sleep_quality) %>% 
+  summarise(mean_intake = mean(caffeine_intake_mg, na.rm = TRUE)) %>% 
+  ggplot(aes(x = sleep_quality, y = mean_intake)) +
+  geom_point() +
+  geom_smooth(method = "lm",se=F) +
+  scale_x_continuous(breaks = seq(min(sleep2$sleep_quality, na.rm = TRUE), 
+                                  max(sleep2$sleep_quality, na.rm = TRUE), by = 1)) +
+  theme_minimal()+
+  labs(title = "Sleep Quality vs. Average Caffaine Intake",
+       x = "Sleep Quality",
+       y = "Caffeine Intake (mg)")+
+  theme(plot.title=element_text(size=rel(1.5), hjust=.5))
+```
+```{r}
+sleep2 <- sleep %>% 
+  select(caffeine_intake_mg, sleep_quality) %>%
+  mutate(sleep_quality = as.numeric(sleep_quality)) 
+
+p2 <- sleep2 %>% 
+  group_by(sleep_quality) %>% 
+  summarise(mean_intake = mean(caffeine_intake_mg, na.rm = TRUE)) %>% 
+  ggplot(aes(x = sleep_quality, y = mean_intake)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = F) +
+  scale_x_continuous(breaks = seq(min(sleep2$sleep_quality, na.rm = TRUE), 
+                                  max(sleep2$sleep_quality, na.rm = TRUE), by = 1)) +
+  theme_minimal() +
+  labs(title = "Sleep Quality vs. Average Caffeine Intake",
+       x = "Sleep Quality",
+       y = "Caffeine Intake (mg)") +
+  theme(plot.title = element_text(size = rel(1.5), hjust = .5))
+
+# 保存图形为 PNG 文件
+ggsave("sleep_quality_vs_caffeine_intake.png", plot = p2, width = 8, height = 6)
+```
+
+```{r}
+sleep_caffeine_group <- sleep_caffeine_group %>%
+  mutate(caffeine_bin = factor(caffeine_bin, levels = c("0-50", "51-100", "101-150", "151-200", "201-250", "251-300"))) %>% 
+  mutate(sleep_quality = as.numeric(sleep_quality))
+
+sleep_caffeine_summary_2 <- sleep_caffeine_group %>% 
+  group_by(caffeine_bin) %>% 
+  summarise(sleep_qu= mean(sleep_quality, na.rm = TRUE))  
+
+ggplot(sleep_caffeine_summary_2, aes(x = caffeine_bin, y = sleep_qu)) +
+  geom_point() +
+  geom_smooth(aes(group = 1), method = "lm",se=F) +
+  theme_minimal()+
+  labs(title = "Caffeine Intake Level vs. Average Sleep Start Time",
+       x = "Caffeine Intake (mg) Level",
+       y = "Average Sleep Quality")+
+  theme(plot.title=element_text(size=rel(1.5), hjust=.5))
+```
+```{r}
+sleep_caffeine_group <- sleep_caffeine_group %>%
+  mutate(caffeine_bin = factor(caffeine_bin, levels = c("0-50", "51-100", "101-150", "151-200", "201-250", "251-300"))) %>% 
+  mutate(sleep_quality = as.numeric(sleep_quality))
+
+sleep_caffeine_summary_2 <- sleep_caffeine_group %>% 
+  group_by(caffeine_bin) %>% 
+  summarise(sleep_qu = mean(sleep_quality, na.rm = TRUE))  
+
+# 创建图形
+p1 <- ggplot(sleep_caffeine_summary_2, aes(x = caffeine_bin, y = sleep_qu)) +
+  geom_point() +
+  geom_smooth(aes(group = 1), method = "lm", se = F) +
+  theme_minimal() +
+  labs(title = "Caffeine Intake Level vs. Average Sleep Quality",
+       x = "Caffeine Intake (mg) Level",
+       y = "Average Sleep Quality") +
+  theme(plot.title = element_text(size = rel(1.5), hjust = .5))
+
+# 导出图像为 PNG 文件
+ggsave("caffeine_vs_sleep_quality.png", plot = p1, width = 8, height = 6)
+```
+
+## Screen time
+
+```{r}
+sleep1 <- sleep %>% 
+  select(screen_time_before_bed_mins, sleep_quality) %>%
+  mutate(sleep_quality = as.numeric(sleep_quality)) 
+
+p <- sleep1 %>% 
+  group_by(sleep_quality) %>% 
+  summarise(mean_screen = mean(screen_time_before_bed_mins, na.rm = TRUE)) %>% 
+  ggplot(aes(x = sleep_quality, y = mean_screen)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = F) +
+  scale_x_continuous(breaks = seq(min(sleep1$sleep_quality, na.rm = TRUE), 
+                                  max(sleep1$sleep_quality, na.rm = TRUE), by = 1)) +
+  labs(x = "Sleep Quality", y = "Mean Screen Time Before Bed") +
+  theme_bw() +
+  theme(axis.line = element_line(colour = "black"),
+        panel.border = element_rect(colour = "black", fill = NA)) +
+  labs(title = "Sleep Quality vs. Average Screen Time Before Bed",
+       x = "Sleep Quality",
+       y = "Average Screen Time Before Bed") +
+  theme(plot.title = element_text(size = rel(1.5), hjust = .5))
+
+# 保存为 PNG 文件
+ggsave("sleep_quality_vs_screen_time.png", plot = p, width = 8, height = 6)
+```
+```{r}
+summary(sleep$screen_time_before_bed_mins)
+```
+```{r}
+sleep_screen_group <- sleep %>%
+  mutate(screen_bin = cut(screen_time_before_bed_mins,
+                            breaks = c(-1, 20, 40,60,80,100,120,140,160,180),
+                            labels = c("0-20" ,"21-40","41-60","61-80","81-100","101-120","121-140","141-160","161-180"))) 
+
+```
+
+```{r}
+
+sleep_screen_group <- sleep_screen_group %>%
+  mutate(screen_bin = factor(screen_bin, levels =  c("0-20" ,"21-40","41-60","61-80","81-100","101-120","121-140","141-160","161-180")))
+
+sleep_screen_summary <- sleep_screen_group %>% 
+  group_by(screen_bin) %>% 
+  summarise(mean_sleep_start = mean(sleep_start_time, na.rm = TRUE))  
+
+plotss <- ggplot(sleep_screen_summary, aes(x = screen_bin, y = mean_sleep_start)) +
+  geom_point() +
+  geom_smooth(aes(group = 1), method = "lm",se=F)+
+  theme_bw()+
+  theme(axis.line = element_line(colour = "black"),
+        panel.border = element_rect(colour = "black", fill = NA))+
+  labs(title = "Screen Time Before Bed Level vs. Average Sleep Start Time",
+       x = "Screen Time Before Bed(mi) Level",
+       y = "Average Sleep Start Time")+
+  theme(plot.title=element_text(size=rel(1.5), hjust=.5))
+
+ggsave("screen_vs_sleep_start.png", plot = plotss, width = 8, height = 5, dpi = 300)
+
+```
+```{r}
+
+sleep_screen_group <- sleep_screen_group %>%
+  mutate(screen_bin = factor(screen_bin, levels =  c("0-20" ,"21-40","41-60","61-80","81-100","101-120","121-140","141-160","161-180"))) %>% 
+  mutate(sleep_quality = as.numeric(sleep_quality))
+  
+sleep_screen_summary <- sleep_screen_group %>% 
+  group_by(screen_bin) %>% 
+  summarise(mean_sleep_q = mean(sleep_quality, na.rm = TRUE))  
+
+plotsq <- ggplot(sleep_screen_summary, aes(x = screen_bin, y = mean_sleep_q)) +
+  geom_point() +
+  geom_smooth(aes(group = 1), method = "lm",se=F)+
+theme_bw()+
+  theme(axis.line = element_line(colour = "black"),
+        panel.border = element_rect(colour = "black", fill = NA))+
+  labs(title = "Screen Time Before Bed Level vs. Average Sleep Quality",
+       x = "Screen Time Before Bed(min) Level",
+       y = "Average Sleep Quality")+
+  theme(plot.title=element_text(size=rel(1.5), hjust=.5))
+
+ggsave("screen_vs_sleep_quality.png", plot = plotsq, width = 8, height = 5, dpi = 300)
+
+```
+
+

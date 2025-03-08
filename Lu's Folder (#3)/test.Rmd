@@ -1,0 +1,97 @@
+---
+title: "test"
+author: "Lu Liang"
+date: "2025-03-06"
+output: html_document
+---
+# Load libraries
+```{r}
+library(ggplot2)
+library(dplyr)
+```
+# Read data (replace with your file path)
+```{r}
+data <- read.csv("sleep_cycle_productivity.csv")
+```
+
+# 1. Caffeine Intake vs. Sleep Start Time (Scatter plot with regression line)
+```{r}
+ggplot(data, aes(x = Caffeine.Intake..mg., y = Sleep.Start.Time)) +
+  geom_point(alpha = 0.6) +
+  geom_smooth(method = "lm", color = "red", se = FALSE) +
+  labs(title = "Caffeine Intake vs. Sleep Start Time",
+       x = "Caffeine Intake (mg)",
+       y = "Sleep Start Time (24h decimal)") +
+  theme_minimal()
+```
+
+# Spearman correlation
+
+
+
+# 2. Caffeine Intake vs. Sleep Quality (Boxplot with binned caffeine)
+```{r}
+data <- data %>%
+  mutate(Caffeine_Bin = cut(Caffeine.Intake..mg.,
+                            breaks = c(0, 50, 150, 300),
+                            labels = c("0-50 mg", "51-150 mg", "151-300 mg")))
+
+ggplot(data, aes(x = Caffeine_Bin, y = Sleep.Quality)) +
+  geom_boxplot(fill = "lightblue") +
+  labs(title = "Caffeine Intake vs. Sleep Quality",
+       x = "Caffeine Intake",
+       y = "Sleep Quality (1-10)") +
+  theme_minimal()
+
+```
+
+# 3. Screen Time vs. Total Sleep Hours (Scatter plot)
+```{r}
+ggplot(data, aes(x = Screen.Time.Before.Bed..mins., y = Total.Sleep.Hours)) +
+  geom_point(alpha = 0.6) +
+  geom_smooth(method = "lm", color = "darkgreen", se = FALSE) +
+  labs(title = "Screen Time Before Bed vs. Total Sleep Hours",
+       x = "Screen Time Before Bed (mins)",
+       y = "Total Sleep Hours") +
+  theme_minimal()
+```
+
+
+# 4. Screen Time vs. Sleep Quality (Boxplot)
+```{r}
+data <- data %>%
+  mutate(Screen_Time_Bin = cut(Screen.Time.Before.Bed..mins.,
+                               breaks = c(0, 30, 60, 200),
+                               labels = c("0-30 mins", "31-60 mins", "61+ mins")))
+
+ggplot(data, aes(x = Screen_Time_Bin, y = Sleep.Quality)) +
+  geom_boxplot(fill = "salmon") +
+  labs(title = "Screen Time Before Bed vs. Sleep Quality",
+       x = "Screen Time Before Bed",
+       y = "Sleep Quality (1-10)") +
+  theme_minimal()
+
+```
+
+# 5. Exercise Duration vs. Sleep Quality (Scatter plot)
+```{r}
+ggplot(data, aes(x = Exercise..mins.day., y = Sleep.Quality)) +
+  geom_point(alpha = 0.6) +
+  geom_smooth(method = "lm", color = "purple", se = FALSE) +
+  labs(title = "Exercise Duration vs. Sleep Quality",
+       x = "Exercise Duration (mins/day)",
+       y = "Sleep Quality (1-10)") +
+  theme_minimal()
+
+```
+
+# Spearman correlation for key relationships
+```{r}
+cor_exercise_sleep_quality <- cor.test(data$Exercise..mins.day., data$Sleep.Quality, method = "spearman")
+cor_screen_sleep_quality <- cor.test(data$Screen.Time.Before.Bed..mins., data$Sleep.Quality, method = "spearman")
+
+cat("Key Correlations:\n")
+cat("Exercise vs. Sleep Quality (ρ):", round(cor_exercise_sleep_quality$estimate, 2), "\n")
+cat("Screen Time vs. Sleep Quality (ρ):", round(cor_screen_sleep_quality$estimate, 2))
+```
+
