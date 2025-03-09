@@ -118,6 +118,7 @@ server <- function(input, output) {
     # Sleep Productivity & Stress Plots
     output$plot_productivity <- renderPlot({
         sleep %>% 
+            filter(gender !="Other") %>% 
             filter(total_sleep_hours >= input$sleep_filter - 0.25 & total_sleep_hours <= input$sleep_filter + 0.25) %>%
             ggplot(aes(x = productivity_score, fill = gender)) +
             geom_density(alpha = 0.5) +
@@ -126,6 +127,7 @@ server <- function(input, output) {
     
     output$plot_stress <- renderPlot({
         sleep %>% 
+            filter(gender !="Other") %>% 
             filter(total_sleep_hours >= input$sleep_filter - 0.25 & total_sleep_hours <= input$sleep_filter + 0.25) %>%
             ggplot(aes(x = stress_level, fill = gender)) +
             geom_density(alpha = 0.5) +
