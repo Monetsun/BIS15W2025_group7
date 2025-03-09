@@ -1,5 +1,5 @@
 ---
-title: "test2"
+title: "Final pic"
 author: "Lu Liang"
 date: "2025-03-08"
 output: html_document
@@ -64,7 +64,7 @@ sleep_caffeine_summary <- sleep_caffeine_group %>%
 p3 <- ggplot(sleep_caffeine_summary, aes(x = caffeine_bin, y = mean_sleep_start)) +
   geom_point() +
   geom_smooth(aes(group = 1), method = "lm", se = F) + 
-  theme_minimal() +
+  theme_bw() +
   labs(title = "Caffeine Intake Level vs. Average Sleep Start Time",
        x = "Caffeine Intake (mg) Level",
        y = "Average Sleep Start Time") +
@@ -90,7 +90,7 @@ sleep2 %>%
   theme_minimal()+
   labs(title = "Sleep Quality vs. Average Caffaine Intake",
        x = "Sleep Quality",
-       y = "Caffeine Intake (mg)")+
+       y = "Average Caffeine Intake (mg)")+
   theme(plot.title=element_text(size=rel(1.5), hjust=.5))
 ```
 ```{r}
@@ -106,10 +106,12 @@ p2 <- sleep2 %>%
   geom_smooth(method = "lm", se = F) +
   scale_x_continuous(breaks = seq(min(sleep2$sleep_quality, na.rm = TRUE), 
                                   max(sleep2$sleep_quality, na.rm = TRUE), by = 1)) +
-  theme_minimal() +
+  theme_bw() +
+  theme(axis.line = element_line(colour = "black"),
+        panel.border = element_rect(colour = "black", fill = NA)) +
   labs(title = "Sleep Quality vs. Average Caffeine Intake",
        x = "Sleep Quality",
-       y = "Caffeine Intake (mg)") +
+       y = "Average Caffeine Intake (mg)") +
   theme(plot.title = element_text(size = rel(1.5), hjust = .5))
 
 # 保存图形为 PNG 文件
@@ -147,7 +149,9 @@ sleep_caffeine_summary_2 <- sleep_caffeine_group %>%
 p1 <- ggplot(sleep_caffeine_summary_2, aes(x = caffeine_bin, y = sleep_qu)) +
   geom_point() +
   geom_smooth(aes(group = 1), method = "lm", se = F) +
-  theme_minimal() +
+  theme_bw() +
+  theme(axis.line = element_line(colour = "black"),
+        panel.border = element_rect(colour = "black", fill = NA)) +
   labs(title = "Caffeine Intake Level vs. Average Sleep Quality",
        x = "Caffeine Intake (mg) Level",
        y = "Average Sleep Quality") +
