@@ -25,30 +25,30 @@ sleeping <- read.csv("/Users/monobuoy/Desktop/BIS15W2025_group7/sleep_cycle_prod
 sleeping
 ```
 1. Sleep and Productivity:
-Does total sleep duration (total_sleep_hours) influence productivity scores (productivity_score)?
-
-
-
-#caffeine intake vs productivity
+Does total sleep duration (total_sleep_hours) influence productivity scores (productivity_score) and stress at around 7 hours of total sleep
 ```{r}
-# sleeping$caffeine_group <- cut(sleeping$caffeine_intake_mg, breaks = seq(0, 300, by = 60), include.lowest = TRUE, labels = c("0-60", "60-120", "120-180", "180-240", "240-300"))
-# sleeping$age <- as.numeric(as.character(sleeping$age))
-# sleeping$age <- cut(sleeping$age, breaks = seq(18, 60, by = 8.4), include.lowest = TRUE, labels = c("young", "young2", "middle", "middle2", "elder"))
-# sleeping %>% 
-#   filter(gender!="Other") %>% 
-#   filter(total_sleep_hours<5) %>% 
-# 
-# ggplot(aes(x = caffeine_group, y = productivity_score)) +
-#   geom_boxplot() +
-#   labs(title = "Caffeine Intake vs Productivity Score", 
-#        x = "Caffeine Intake (mg)", 
-#        y = "Productivity Score") +
-#   theme_minimal()
-# 
+ plot_productivity <- sleeping %>% 
+  filter(gender != "Other") %>% 
+  filter(total_sleep_hours >= 6.75 & total_sleep_hours <= 7.25) %>% 
+  ggplot(aes(x = productivity_score, fill = gender)) +
+  geom_density(alpha=0.5) +
+  labs(title = "Productivity Score Density",
+       x = "Productivity Score", 
+       y = "Density")
+ggsave("productivity_score_density.png", plot = plot_productivity, width = 8, height = 5, dpi = 300)
 
+plot_stress <- sleeping %>% 
+  filter(gender != "Other") %>% 
+  filter(total_sleep_hours >= 6.75 & total_sleep_hours <= 7.25) %>% 
+  ggplot(aes(x = stress_level, fill = gender)) +
+  geom_density(alpha=0.5) +
+  labs(title = "Productivity Score Density",
+       x = "Productivity Score", 
+       y = "Stress")
+ggsave("stress_level_density.png", plot = plot_stress, width = 8, height = 5, dpi = 300)
 ```
 
-
+#caffeine intake vs productivity
 ```{r}
 library(shiny)
 library(dplyr)
@@ -57,7 +57,7 @@ library(ggplot2)
 # Define UI
 ui <- fluidPage(
   
-  titlePanel("Sleep, Productivity & Well-being"),
+  titlePanel(tags$h1("Sleep, Productivity & Well-being", style = "font-size: 36px;")),
   
   sidebarLayout(
     sidebarPanel(
@@ -79,15 +79,16 @@ ui <- fluidPage(
 server <- function(input, output, session) {
   
   session$onSessionEnded(stopApp) # Stop the app when closed
-  
-  # 📌 First Density Plot: Productivity Score by Gender
+
+
+#Productivity Score by Gender
   output$plot_productivity <- renderPlot({
     sleeping %>% 
       filter(gender != "Other") %>% 
       filter(total_sleep_hours >= as.numeric(input$sleep_filter) - 0.25 & 
              total_sleep_hours <= as.numeric(input$sleep_filter) + 0.25) %>%  # Noise range ±0.25
       ggplot(aes(x = productivity_score, fill = gender)) +
-      geom_density(alpha = 0.5) +  
+      geom_density(alpha = 0.5) + 
       scale_fill_manual(values = c("#e74c3c", "#3498db")) +
       labs(title = paste("Productivity Score Density (Sleep:", input$sleep_filter, "±0.25 hrs)"), 
            x = "Productivity Score", 
@@ -95,12 +96,13 @@ server <- function(input, output, session) {
       theme_minimal()
   })
   
-  # 📌 Second Density Plot: Stress Level by Gender
+#Stress Level by Gender
   output$plot_stress <- renderPlot({
     sleeping %>% 
       filter(gender != "Other") %>% 
       filter(total_sleep_hours >= as.numeric(input$sleep_filter) - 0.25 & 
              total_sleep_hours <= as.numeric(input$sleep_filter) + 0.25) %>%  # Noise range ±0.25 
+      
       ggplot(aes(x = stress_level, fill = gender)) +
       geom_density(alpha = 0.5) +  
       scale_fill_manual(values = c("#2ecc71", "#9b59b6")) +
