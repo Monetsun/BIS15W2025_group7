@@ -1,0 +1,170 @@
+---
+title: "Project_Question4"
+output: html_document
+date: "`r Sys.Date()`"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Load Library
+
+```{r}
+library("tidyverse")
+library("naniar")
+library("janitor")
+library(shiny)
+library(ggplot2)
+library(dplyr)
+```
+## Load Data
+```{r}
+sleep <- read_csv("sleep_cycle_productivity.csv")
+
+```
+## Check some basic information of the data
+```{r}
+glimpse(sleep)
+summary(sleep)
+anyNA(sleep)
+```
+```{r}
+names(sleep)
+```
+
+```{r}
+colnames(sleep) <- c("date", "person_id", "age", "gender", "sleep_start_time", "sleep_end_time",
+                     "total_sleep_hours", "sleep_quality", "exercise_mins_per_day", "caffeine_intake_mg", "screen_time_before_bed_mins", "work_hours_per_day", "productivity_score", "mood_score", "stress_level")
+```
+
+
+```{r}
+sleep <- sleep %>% 
+  filter(gender %in% c("Male", "Female"))
+```
+
+```{r}
+cor(sleep$caffeine_intake_mg, sleep$stress_level)
+cor(sleep$screen_time_before_bed_mins, sleep$stress_level)
+```
+
+## Question4-1: Does high caffeine intake correlate with higher stress levels?
+```{r}
+sleep_caffeine_avg <- sleep %>% 
+  group_by(stress_level) %>% 
+  summarize(avg_caffeine_per_stress_level = mean(caffeine_intake_mg, na.rm = TRUE))
+sleep_avg
+
+cor(sleep$caffeine_intake_mg, sleep$stress_level)
+cor(sleep$screen_time_before_bed_mins, sleep$stress_level)
+```
+```{r}
+cor(sleep$caffeine_intake_mg, sleep$sleep_start_time)
+```
+
+```{r}
+p <- sleep_caffeine_avg %>% 
+  ggplot(aes(x = avg_caffeine_per_stress_level, y = stress_level)) +
+  geom_point(alpha = 0.5, color = "blue") +
+  geom_smooth(method = "lm", se = TRUE, color = "red") +
+  theme_minimal()+
+  labs(title = "Caffeine Intake vs. Stress Level",
+       x = "Average Caffeine Intake (mg) per Stress Level",
+       y = "Stress Level Score (1-10)")+
+  theme_bw()+
+  theme(axis.line = element_line(colour = "black"),
+        panel.border = element_rect(colour = "black", fill = NA, size = 1))+
+  theme(plot.title=element_text(size=rel(1.5), hjust=.5))
+
+ggsave("caffeine_vs_stress.png", plot = p, width = 8, height = 5, dpi = 300)
+```
+
+
+## Question4-2: Is screen time before bed associated with increased stress?
+
+```{r}
+sleep_screen_avg <- sleep %>% 
+  group_by(stress_level) %>% 
+  summarize(avg_screen_time_per_stress_level = mean(screen_time_before_bed_mins, na.rm = TRUE))
+sleep_screen_avg
+```
+
+```{r}
+q <- sleep_screen_avg %>% 
+  ggplot(aes(x = avg_screen_time_per_stress_level, y = stress_level)) +
+  geom_point(alpha = 0.5, color = "darkgreen") +
+  geom_smooth(method = "lm", se = TRUE, color = "red") +
+  #facet_wrap(~ age_group) +  
+  theme_minimal() +
+  labs(title = "Screen Time Before Bed vs. Stress Level",
+       x = "Avearge Screen Time Before Bed (mins)",
+       y = "Stress Level (1-10)")+
+  theme_bw()+
+  theme(axis.line = element_line(colour = "black"),
+        panel.border = element_rect(colour = "black", fill = NA, size = 1))+
+  theme(plot.title=element_text(size=rel(1.5), hjust=.5))
+
+ggsave("screen_time_vs_stress.png", plot = q, width = 8, height = 5, dpi = 300)
+
+```
+## Make a shiny APP
+```{r, eval=F, echo=T}
+library(shiny)
+
+ui <- fluidPage(titlePanel("Stress, Caffeine, and Screen Time Analysis"),
+      sidebarLayout(
+    sidebarPanel(
+      selectInput("age", "Select Age:", 
+                  choices = sort(unique(sleep$age)),
+                  selected = "18")
+    ),
+    
+    mainPanel(
+      tabsetPanel(
+        tabPanel("Caffeine vs Stress", plotOutput("caffeine_plot")),
+        tabPanel("Screen Time vs Stress", plotOutput("screen_time_plot"))
+      )
+    )
+  )
+)
+
+
+server <- function(input, output) {
+  
+  
+  filtered_data <- reactive({
+    sleep %>% filter(age == input$age)
+  })
+  
+  # Caffeine vs Stress Level Plot
+  output$caffeine_plot <- renderPlot({
+    ggplot(filtered_data(), aes(x = caffeine_intake_mg, y = stress_level)) +
+      geom_point(alpha = 0.5, color = "blue1") +
+      geom_smooth(method = "lm", se = TRUE, color = "red") +
+      theme_minimal() +
+      labs(title = paste("Caffeine Intake vs. Stress Level (Age:", input$age, ")"),
+           x = "Caffeine Intake (mg)",
+           y = "Stress Level (1-10)")
+  })
+  
+  # Screen Time vs Stress Level Plot
+  output$screen_time_plot <- renderPlot({
+    ggplot(filtered_data(), aes(x = screen_time_before_bed_mins, y = stress_level)) +
+      geom_point(alpha = 0.5, color = "darkgreen") +
+      geom_smooth(method = "lm", se = TRUE, color = "red") +
+      theme_minimal() +
+      labs(title = paste("Screen Time vs. Stress Level (Age:", input$age, ")"),
+           x = "Screen Time Before Bed (mins)",
+           y = "Stress Level (1-10)")
+  })
+}
+
+shinyApp(ui, server)
+```
+
+
+
+
+
+
