@@ -5,4 +5,208 @@ date: "2025-02-27"
 output: html_document
 ---
 
+3. Lifestyle Factors and Sleep:
+How does caffeine intake affect sleep start time or sleep quality?
+Does screen time before bed impact total sleep hours or sleep quality?
+Is there a link between exercise duration and sleep quality or total sleep hours?
+
+
+## Load the Libraries  
+```{r message=FALSE, warning=FALSE}
+library(tidyverse)
+library(shiny)
+library(shinydashboard)
+require(janitor)
+library(palmerpenguins)
+```
+
+```{r}
+sleep <- read_csv("~/Desktop/BIS15W2025_group7/Lu's Folder (#3)/sleep_cycle_productivity.csv") %>% 
+  clean_names()
+sleep$sleep_quality <- as_factor(sleep$sleep_quality)
+```
+
+```{r}
+summary(sleep)
+```
+```{r}
+sleep_data <- sleep %>%
+  mutate(Age_Group = cut(age, 
+                         breaks = c(18, 22, 30, 45, 60, 100), 
+                         labels = c("18-22", "23-30","31-45", "46-60", "60+"),
+                         right = FALSE))  # Ensure age bins are non-overlapping
+
+
+```
+
+
+##1How does caffeine intake affect sleep start time or sleep quality?
+_no effect_
+```{r}
+sleep_data %>% 
+  select(sleep_start_time,caffeine_intake_mg,Age_Group) %>% 
+  ggplot(aes(x=caffeine_intake_mg,y=sleep_start_time))+
+  geom_point(alpha=0.8,color="skyblue")+
+  geom_smooth(method = "lm", color = "red")+
+  facet_grid(Age_Group~.)
+```
+```{r}
+sleep %>% 
+  select(sleep_start_time,caffeine_intake_mg,age,gender) %>% 
+  filter(age=="18", gender=="Female") %>% 
+  ggplot(aes(x=caffeine_intake_mg,y=sleep_start_time))+
+  geom_point(alpha=0.8,color="skyblue")+
+  geom_smooth(method = "lm",se=T, color = "red")
+```
+
+```{r}
+sleep$sleep_quality <- as_factor(sleep$sleep_quality)
+sleep %>% 
+  select(caffeine_intake_mg,sleep_quality) %>% 
+  ggplot(aes(x=sleep_quality,y=caffeine_intake_mg,fill=sleep_quality))+
+  geom_boxplot()
+```
+```{r}
+sleep %>% 
+  select(caffeine_intake_mg,sleep_quality) %>%
+  group_by(sleep_quality) %>% 
+  summarise(mean_intake=mean(caffeine_intake_mg)) %>% 
+  arrange(-mean_intake)
+```
+
+```{r}
+sleep %>% 
+  select(caffeine_intake_mg,sleep_quality) %>%
+  group_by(sleep_quality) %>% 
+  summarise(mean_intake=mean(caffeine_intake_mg)) %>% 
+  arrange(-mean_intake) %>% 
+  ggplot(aes(x=reorder(sleep_quality,mean_intake),y=mean_intake))+
+  geom_col()+
+  coord_flip()
+
+```
+##2Does screen time before bed impact total sleep hours or sleep quality?
+_no effect_
+```{r}
+sleep %>% 
+  select(sleep_start_time,screen_time_before_bed_mins,gender,age) %>%
+  filter(age=="50") %>% 
+  ggplot(aes(x=screen_time_before_bed_mins,y=sleep_start_time))+
+  geom_point(alpha=0.8,color="skyblue")+
+  geom_smooth(method = "lm", color = "red")
+```
+
+```{r}
+sleep %>% 
+  select(screen_time_before_bed_mins,sleep_quality) %>% 
+  ggplot(aes(x=sleep_quality,y=screen_time_before_bed_mins,fill=sleep_quality))+
+  geom_boxplot()
+```
+
+```{r}
+sleep %>% 
+  select(screen_time_before_bed_mins,sleep_quality) %>%
+  group_by(sleep_quality) %>% 
+  summarise(mean_screen=mean(screen_time_before_bed_mins)) %>% 
+  arrange(-mean_screen)
+```
+
+```{r}
+sleep %>% 
+  select(screen_time_before_bed_mins,sleep_quality) %>%
+  group_by(sleep_quality) %>% 
+  summarise(mean_screen=mean(screen_time_before_bed_mins)) %>% 
+  arrange(-mean_screen) %>% 
+  ggplot(aes(x=reorder(sleep_quality,mean_screen),y=mean_screen))+
+  geom_col()+
+  coord_flip()
+```
+
+```{r}
+sleep %>% 
+  select(exercise_mins_day,sleep_quality) %>% 
+  ggplot(aes(x=sleep_quality,y=exercise_mins_day))+
+  geom_boxplot()
+```
+
+
+```{r}
+sleep %>% 
+  select(screen_time_before_bed_mins,sleep_quality) %>%
+  group_by(sleep_quality) %>% 
+  summarise(mean_screen=mean(screen_time_before_bed_mins)) %>% 
+  arrange(-mean_screen) %>% 
+  ggplot(aes(x=sleep_quality,y=mean_screen))+
+  geom_point()
+```
+```{r}
+sleep_data %>% 
+  group_by(Age_Group) %>% 
+  summarise(mean_intake=mean(caffeine_intake_mg),
+            mean_sleep=mean(sleep_start_time),
+            mean_total=mean(total_sleep_hours))
+  
+```
+
+
+```{r}
+sleep %>% 
+  group_by(age) %>% 
+  summarise(mean_intake=mean(caffeine_intake_mg),
+            mean_sleep=mean(sleep_start_time),
+            mean_total=mean(total_sleep_hours))
+  
+```
+
+
+
+```{r}
+summary(sleep$sleep_start_time)
+```
+```{r}
+cor(sleep$caffeine_intake_mg, sleep$sleep_start_time)
+cor(sleep$caffeine_intake_mg, sleep$sleep)
+```
+
+```{r}
+sleep_caffeine_group <- sleep %>%
+  mutate(caffeine_bin = cut(caffeine_intake_mg,
+                            breaks = c(-1,0, 50, 100, 150, 200, 250, 300),
+                            labels = c("0","0-50" ,"51-100","101-150","151-200","201-250","251-300"))) 
+
+```
+
+
+```{r}
+sleep_caffeine_group %>% 
+  group_by(caffeine_bin) %>% 
+  summarise(mean=mean(sleep_start_time))
+```
+
+
+```{r}
+sleep_caffeine_group %>% 
+  group_by(caffeine_bin) %>% 
+  summarise(mean = mean(as.numeric(sleep_start_time)))  %>% 
+  mutate(caffeine_bin = as.numeric(caffeine_bin)) %>% 
+  ggplot(aes(x=caffeine_bin,y=mean))+
+  geom_point()+
+  geom_smooth(method="lm")
+```
+
+```{r}
+sleep_caffeine_group <- sleep_caffeine_group %>%
+  mutate(caffeine_bin = factor(caffeine_bin, levels = c("0", "0-50", "51-100", "101-150", "151-200", "201-250", "251-300")))
+
+sleep_caffeine_summary <- sleep_caffeine_group %>% 
+  group_by(caffeine_bin) %>% 
+  summarise(mean_sleep_start = mean(sleep_start_time, na.rm = TRUE))  
+
+ggplot(sleep_caffeine_summary, aes(x = caffeine_bin, y = mean_sleep_start)) +
+  geom_point() +
+  geom_smooth(aes(group = 1), method = "lm") + 
+  labs(x = "Caffeine Intake Level", y = "Mean Sleep Start Time") +
+  theme_minimal()
+```
+
 

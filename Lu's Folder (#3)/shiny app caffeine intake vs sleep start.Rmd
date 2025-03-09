@@ -1,0 +1,58 @@
+---
+title: "shiny app caffeine intake vs sleep start"
+author: "Lu Liang"
+date: "2025-03-06"
+output: html_document
+---
+## Load the Libraries  
+```{r message=FALSE, warning=FALSE}
+library(tidyverse)
+library(shiny)
+library(shinydashboard)
+require(janitor)
+library(palmerpenguins)
+```
+## Load data
+```{r}
+sleep <- read_csv("~/Desktop/BIS15W2025_group7/Lu's Folder (#3)/sleep_cycle_productivity.csv") %>% 
+  clean_names()
+sleep$sleep_quality <- as_factor(sleep$sleep_quality)
+```
+
+```{r}
+sleep %>% 
+  select(sleep_start_time,caffeine_intake_mg,age,gender) %>% 
+  filter(age=="18", gender=="Female") %>% 
+  ggplot(aes(x=caffeine_intake_mg,y=sleep_start_time))+
+  geom_point(alpha=0.8,color="skyblue")+
+  geom_smooth(method = "lm",se=T, color = "red")
+```
+
+```{r, eval=F, echo=T}
+ui <- fluidPage(titlePanel("Test"),
+                selectInput("x", 
+                             "Select Gender", 
+                             choices=c("Female", "Male","Other"), 
+                             selected="Female"),
+                numericInput("y",
+                            "Select Age",
+                            value = 18, min = 18, max = 59 ),
+                plotOutput("plot", width="500px", height="400px")
+)
+
+server <- function(input, output, session) {
+    session$onSessionEnded(stopApp) 
+    output$plot <- renderPlot({
+    sleep %>% 
+    filter(age==input$y, gender==input$x) %>% 
+    ggplot(aes(x=caffeine_intake_mg,y=sleep_start_time))+
+    geom_point(alpha=0.8,color="skyblue")+
+    geom_smooth(method = "lm",se=T, color = "red")
+  })
+    
+
+}
+
+shinyApp(ui, server)
+```
+
