@@ -166,3 +166,134 @@ server <- function(input, output) {
 
 shinyApp(ui, server)
 ```
+
+```{r}
+library(shiny)
+library(shinydashboard)
+library(ggplot2)
+library(dplyr)
+
+ui <- dashboardPage(
+  dashboardHeader(title = "✨ Multi-App Dashboard ✨"),
+  dashboardSidebar(
+    sidebarMenu(
+      menuItem("☕ Caffeine & Sleep", tabName = "caffeine_sleep", icon = icon("coffee")),
+      menuItem("💤 Sleep & Productivity", tabName = "sleep_productivity", icon = icon("chart-line")),
+      menuItem("😊 Sleep Quality vs Mood", tabName = "sleep_mood", icon = icon("smile")),
+      menuItem("💖 Stress vs Caffeine & Screen Time", tabName = "stress_analysis", icon = icon("heartbeat"))
+    )
+  ),
+  dashboardBody(
+    tags$head(
+      tags$style(HTML(".content-wrapper { background-color: #f0f0f5 !important; }")),
+      tags$style(HTML(".main-header .logo { font-weight: bold; color: #ffffff !important; background: linear-gradient(45deg, #ff9a9e, #fad0c4) !important; }"))
+    ),
+    tabItems(
+      tabItem(tabName = "caffeine_sleep",
+              fluidPage(
+                tags$img(src='https://media.giphy.com/media/xT9IgG50Fb7Mi0prBC/giphy.gif', width='100%'),
+                h2("Caffeine Intake vs Sleep Start Time", style = "color: #2c3e50;"),
+                sidebarLayout(
+                  sidebarPanel(
+                    selectInput("gender", "Select Gender", choices = c("Female", "Male"), selected = "Female"),
+                    numericInput("age", "Select Age", value = 25, min = 18, max = 60)
+                  ),
+                  mainPanel(plotOutput("caffeine_sleep_plot"))
+                )
+              )
+      ),
+      tabItem(tabName = "sleep_productivity",
+              fluidPage(
+                h2("Sleep Quality vs Productivity & Stress", style = "color: #3498db;"),
+                sidebarLayout(
+                  sidebarPanel(
+                    sliderInput("sleep_filter", "Filter by Total Sleep Hours:", min = 4, max = 10, value = 6, step = 0.5)
+                  ),
+                  mainPanel(
+                    fluidRow(
+                      column(6, plotOutput("plot_productivity")),
+                      column(6, plotOutput("plot_stress"))
+                    )
+                  )
+                )
+              )
+      ),
+      tabItem(tabName = "sleep_mood",
+              fluidPage(
+                h2("Sleep Quality vs. Mood Score Analysis", style = "color: #e67e22;"),
+                sidebarLayout(
+                  sidebarPanel(
+                    selectInput("x", "Select X Variable", choices = c("sleep_quality", "mood_score"), selected = "sleep_quality"),
+                    selectInput("y", "Select Y Variable", choices = c("sleep_quality", "mood_score"), selected = "mood_score"),
+                    sliderInput("pointsize", "Select the Point Size", min = 1, max = 5, value = 2, step = 0.5),
+                    checkboxInput("show_line", "Show Regression Line", value = TRUE)
+                  ),
+                  mainPanel(
+                    tags$img(src='https://media.giphy.com/media/3o7abKhOpu0NwenH3O/giphy.gif', width='100%'),
+                    plotOutput("scatterPlot")
+                  )
+                )
+              )
+      ),
+      tabItem(tabName = "stress_analysis",
+              fluidPage(
+                h2("Stress, Caffeine, and Screen Time Analysis", style = "color: #c0392b;"),
+                sidebarLayout(
+                  sidebarPanel(
+                    selectInput("age", "Select Age:", choices = sort(unique(sleep$age)), selected = "18")
+                  ),
+                  mainPanel(
+                    tabsetPanel(
+                      tabPanel("Caffeine vs Stress", plotOutput("caffeine_plot")),
+                      tabPanel("Screen Time vs Stress", plotOutput("screen_time_plot"))
+                    )
+                  )
+                )
+              )
+      )
+    )
+  )
+)
+
+server <- function(input, output) {
+  output$caffeine_sleep_plot <- renderPlot({
+    sleep %>% 
+      filter(gender == input$gender, age == input$age) %>% 
+      ggplot(aes(x = caffeine_intake_mg, y = sleep_start_time)) +
+      geom_point(alpha = 0.8, color = "#1abc9c") +
+      geom_smooth(method = "lm", color = "#e74c3c") +
+      labs(x = "Caffeine Intake (mg)", y = "Sleep Start Time", title = "Caffeine vs Sleep")
+  })
+  
+  output$plot_productivity <- renderPlot({
+    sleep %>% 
+      filter(gender != "Other") %>% 
+      filter(total_sleep_hours >= input$sleep_filter - 0.25 & total_sleep_hours <= input$sleep_filter + 0.25) %>%
+      ggplot(aes(x = productivity_score, fill = gender)) +
+      geom_density(alpha = 0.5) +
+      theme_minimal()
+  })
+  
+  output$plot_stress <- renderPlot({
+    sleep %>% 
+      filter(gender != "Other") %>% 
+      filter(total_sleep_hours >= input$sleep_filter - 0.25 & total_sleep_hours <= input$sleep_filter + 0.25) %>%
+      ggplot(aes(x = stress_level, fill = gender)) +
+      geom_density(alpha = 0.5) +
+      theme_minimal()
+  })
+  
+  output$scatterPlot <- renderPlot({
+    p <- ggplot(sleep, aes_string(x = input$x, y = input$y)) +
+      geom_point(size = input$pointsize, color = "#2980b9", alpha = 0.6) +
+      theme_minimal()
+    if (input$show_line) {
+      p <- p + geom_smooth(method = "lm", color = "#e74c3c")
+    }
+    p
+  })
+}
+
+shinyApp(ui, server)
+```
+

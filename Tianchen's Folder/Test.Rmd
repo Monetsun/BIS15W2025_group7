@@ -47,6 +47,28 @@ plot_stress <- sleeping %>%
        y = "Stress")
 ggsave("stress_level_density.png", plot = plot_stress, width = 8, height = 5, dpi = 300)
 ```
+Does total sleep duration (total_sleep_hours) influence productivity scores (productivity_score) and stress at around 9.5 hours of total sleep
+```{r}
+ plot_productivity2 <- sleeping %>% 
+  filter(gender != "Other") %>% 
+  filter(total_sleep_hours >= 9.25 & total_sleep_hours <= 9.75) %>% 
+  ggplot(aes(x = productivity_score, fill = gender)) +
+  geom_density(alpha=0.5) +
+  labs(title = "Productivity Score Density",
+       x = "Productivity Score", 
+       y = "Density")
+ggsave("productivity_score_density.png", plot = plot_productivity2, width = 8, height = 5, dpi = 300)
+
+plot_stress2 <- sleeping %>% 
+  filter(gender != "Other") %>% 
+  filter(total_sleep_hours >= 9.25 & total_sleep_hours <= 9.75) %>% 
+  ggplot(aes(x = stress_level, fill = gender)) +
+  geom_density(alpha=0.5) +
+  labs(title = "Productivity Score Density",
+       x = "Productivity Score", 
+       y = "Stress")
+ggsave("stress_level_density.png", plot = plot_stress2, width = 8, height = 5, dpi = 300)
+```
 
 #caffeine intake vs productivity
 ```{r}
