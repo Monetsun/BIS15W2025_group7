@@ -141,8 +141,32 @@ shinyApp(ui = ui, server = server)
 ##group by gender
 ```{r}
 sleep2 <- sleep %>% 
-  filter(gender=="Female" | gender=="Male") 
+  filter(gender=="Female" | gender=="Male") %>% 
+  select(mood_score, sleep_quality, gender)
+sleep2
+```
+```{r}
+sleep2 %>% 
+  group_by(gender) %>% 
+  summarise(mean_mood=mean(mood_score, na.rm=T),
+            mean_quality=mean(sleep_quality, na.rm=T))
+```
 
+```{r}
+sleep2 %>% 
+  ggplot(aes(x=as.factor(mood_score),y=sleep_quality,fill=gender))+
+  geom_boxplot(color="blue",alpha=0.6,width=0.2,height=0.2)+
+  geom_smooth(method = "lm",se=TRUE,color="red")+
+  labs(title="Correlation between Sleep Quality and Mood Score",
+       x="Mood Score",
+       y="Sleep Quality")+
+  theme_minimal()
+```
+```{r}
+cor.test(sleep2$sleep_quality, sleep2$mood_score)
+```
+
+```{r}
   ggplot(sleep2, aes(x = mood_score, y = sleep_quality)) +
   geom_jitter(aes(color = gender), alpha = 0.6, width = 0.2, height = 0.2) +
   geom_smooth(aes(color = gender), method = "lm", se = TRUE) +
@@ -153,6 +177,7 @@ sleep2 <- sleep %>%
   ) +
   theme_minimal()
 ```
+
 ##group by gender, density plot for sleep quality
 ```{r}
 ggplot(sleep2, aes(x = sleep_quality, fill = gender)) +
