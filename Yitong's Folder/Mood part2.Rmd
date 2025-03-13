@@ -27,7 +27,7 @@ This is an R Markdown document. Markdown is a simple formatting syntax for autho
 When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
 
 ```{r}
-sleep <- read.csv("/Users/sunyunbo/Desktop/BIS15W2025_group7-main/Yitong's Folder/sleep_cycle_productivity.csv")
+sleep <- read.csv("/Users/sunyunbo/Desktop/BIS15W2025_group7/Yitong's Folder/sleep_cycle_productivity.csv")
 ```
 
 ```{r}
@@ -141,8 +141,32 @@ shinyApp(ui = ui, server = server)
 ##group by gender
 ```{r}
 sleep2 <- sleep %>% 
-  filter(gender=="Female" | gender=="Male") 
+  filter(gender=="Female" | gender=="Male") %>% 
+  select(mood_score, sleep_quality, gender)
+sleep2
+```
+```{r}
+sleep2 %>% 
+  group_by(gender) %>% 
+  summarise(mean_mood=mean(mood_score, na.rm=T),
+            mean_quality=mean(sleep_quality, na.rm=T))
+```
 
+```{r}
+sleep2 %>% 
+  ggplot(aes(x=as.factor(mood_score),y=sleep_quality,fill=gender))+
+  geom_boxplot(color="blue",alpha=0.6,width=0.2,height=0.2)+
+  geom_smooth(method = "lm",se=TRUE,color="red")+
+  labs(title="Correlation between Sleep Quality and Mood Score",
+       x="Mood Score",
+       y="Sleep Quality")+
+  theme_minimal()
+```
+```{r}
+cor.test(sleep2$sleep_quality, sleep2$mood_score)
+```
+
+```{r}
   ggplot(sleep2, aes(x = mood_score, y = sleep_quality)) +
   geom_jitter(aes(color = gender), alpha = 0.6, width = 0.2, height = 0.2) +
   geom_smooth(aes(color = gender), method = "lm", se = TRUE) +
@@ -153,6 +177,7 @@ sleep2 <- sleep %>%
   ) +
   theme_minimal()
 ```
+
 ##group by gender, density plot for sleep quality
 ```{r}
 ggplot(sleep2, aes(x = sleep_quality, fill = gender)) +
@@ -186,5 +211,283 @@ sleep2 %>%
 ```{r}
 t.test(sleep_quality ~ gender, data = sleep2)
 ```
+
+
+#new shinny app
+```{r}
+# 加载必要的 R 包
+library(shiny)
+library(ggplot2)
+library(dplyr)
+
+# sleep2 数据由用户提供，这里不生成
+
+# UI 设计
+ui <- fluidPage(
+  
+  # 应用标题
+  titlePanel("Sleep Quality Estimation Based on Mood & Gender"),
+  
+  sidebarLayout(
+    
+    # 侧边栏 - 用户输入
+    sidebarPanel(
+      h3("Your Data Input"),
+      selectInput("user_gender", "Select Your Gender:", choices = c("Male", "Female")),
+      numericInput("user_mood", "Enter Your Mood Score (1-10):", value = 5, min = 1, max = 10),
+      actionButton("estimate_btn", "Estimate Your Sleep Quality"),  # 按钮触发估算
+      hr(),
+      
+      # 显示预测结果
+      h4("Estimated Sleep Quality"),
+      verbatimTextOutput("estimated_quality")
+    ),
+    
+    # 主界面 - 显示密度图（含预测结果）
+    mainPanel(
+      tabsetPanel(
+        tabPanel("Sleep Quality Distribution", plotOutput("density_sleep"))
+      )
+    )
+  )
+)
+
+# 服务器逻辑
+server <- function(input, output) {
+  
+  # 估算睡眠质量
+  estimated_quality <- reactiveVal(NULL)  # 用于存储预测结果
+
+  observeEvent(input$estimate_btn, {
+    req(input$user_gender, input$user_mood)  # 确保输入不为空
+    
+    user_data <- sleep2 %>%
+      filter(gender == input$user_gender, mood_score == input$user_mood)
+    
+    if (nrow(user_data) > 0) {
+      predicted_quality <- round(mean(user_data$sleep_quality, na.rm = TRUE), 2)
+      estimated_quality(predicted_quality)  # 存储预测值
+      output$estimated_quality <- renderText({
+        paste("Based on the dataset, your estimated sleep quality is around:", predicted_quality)
+      })
+    } else {
+      estimated_quality(NULL)  # 预测失败时清空结果
+      output$estimated_quality <- renderText("No exact match found, but check the density plot for possible values.")
+    }
+  })
+
+  # Sleep Quality 密度图（带预测结果）
+  output$density_sleep <- renderPlot({
+    p <- ggplot(sleep2, aes(x = sleep_quality, fill = gender)) +
+      geom_density(alpha = 0.5) +
+      labs(title = "Density Plot of Sleep Quality by Gender",
+           x = "Sleep Quality",
+           y = "Density") +
+      theme_minimal()
+    
+    # 如果有预测值，则在密度图上标记
+    if (!is.null(estimated_quality())) {
+      p <- p + 
+        geom_vline(aes(xintercept = estimated_quality()), color = "red", linetype = "dashed", size = 1) +
+        annotate("text", x = estimated_quality(), y = 0.02, label = paste("Your Estimate:", estimated_quality()), 
+                 color = "red", vjust = -1, size = 5)
+    }
+    
+    print(p)
+  })
+}
+
+# 运行 Shiny App
+shinyApp(ui = ui, server = server)
+
+```
+
+#after input, graph shows.
+```{r}
+# 加载必要的 R 包
+library(shiny)
+library(ggplot2)
+library(dplyr)
+
+# sleep2 数据由用户提供，这里不生成
+
+# UI 设计
+ui <- fluidPage(
+  
+  # 应用标题
+  titlePanel("Sleep Quality Distribution Based on Mood & Gender"),
+  
+  sidebarLayout(
+    
+    # 侧边栏 - 用户输入
+    sidebarPanel(
+      h3("Your Data Input"),
+      selectInput("user_gender", "Select Your Gender:", choices = c("Male", "Female")),
+      numericInput("user_mood", "Enter Your Mood Score (1-10):", value = 5, min = 1, max = 10),
+      actionButton("show_dist", "Show Sleep Quality Distribution"),
+      hr()
+    ),
+    
+    # 主界面 - 显示 sleep_quality 分布（箱线图+密度图）
+    mainPanel(
+      tabsetPanel(
+        tabPanel("Sleep Quality Distribution", 
+                 plotOutput("boxplot_sleep"),
+                 plotOutput("density_sleep"))
+      )
+    )
+  )
+)
+
+# 服务器逻辑
+server <- function(input, output) {
+  
+  observeEvent(input$show_dist, {
+    req(input$user_gender, input$user_mood)  # 确保输入不为空
+
+    # 筛选匹配 gender & mood_score 的数据
+    filtered_data <- sleep2 %>%
+      filter(gender == input$user_gender, mood_score == input$user_mood)
+    
+    # Sleep Quality 箱线图
+    output$boxplot_sleep <- renderPlot({
+      ggplot(filtered_data, aes(x = as.factor(mood_score), y = sleep_quality, fill = gender)) +
+        geom_boxplot(alpha = 0.6) +
+        labs(title = paste("Sleep Quality Distribution for Mood Score", input$user_mood),
+             x = "Mood Score",
+             y = "Sleep Quality") +
+        theme_minimal()
+    })
+
+    # Sleep Quality 密度图（显示该 mood_score 下的分布）
+    output$density_sleep <- renderPlot({
+      ggplot(filtered_data, aes(x = sleep_quality, fill = gender)) +
+        geom_density(alpha = 0.5) +
+        labs(title = paste("Density Plot of Sleep Quality for Mood Score", input$user_mood),
+             x = "Sleep Quality",
+             y = "Density") +
+        theme_minimal()
+    })
+  })
+}
+
+# 运行 Shiny App
+shinyApp(ui = ui, server = server)
+
+```
+
+#Final version, with description.
+```{r}
+library(shiny)
+library(ggplot2)
+library(dplyr)
+
+
+ui <- fluidPage(
+  
+  titlePanel("Sleep Quality Distribution Based on Mood & Gender"),
+  
+  sidebarLayout(
+    
+    # 侧边栏 - 用户输入
+    sidebarPanel(
+      h3("Your Data Input"),
+      selectInput("user_gender", "Select Your Gender:", choices = c("Male", "Female")),
+      numericInput("user_mood", "Enter Your Mood Score (1-10):", value = 5, min = 1, max = 10),
+      actionButton("show_dist", "Show Sleep Quality Distribution"),
+      hr()
+    ),
+    
+    # 主界面 - 显示 sleep_quality 分布（箱线图+密度图 + 解读）
+    mainPanel(
+      tabsetPanel(
+        tabPanel("Sleep Quality Distribution", 
+                 plotOutput("boxplot_sleep", height = "400px"),  # **增加间距**
+                 htmlOutput("boxplot_interpretation"),  # **Boxplot 解释，带加粗重点**
+                 tags$br(),  # **增加间距**
+                 plotOutput("density_sleep", height = "400px"),  # **增加间距**
+                 htmlOutput("density_interpretation")  # **Density Plot 解释**
+        )
+      )
+    )
+  )
+)
+
+# 服务器逻辑
+server <- function(input, output) {
+  
+  observeEvent(input$show_dist, {
+    req(input$user_gender, input$user_mood)  # 确保输入不为空
+
+    # 筛选匹配 gender & mood_score 的数据
+    filtered_data <- sleep2 %>%
+      filter(gender == input$user_gender, mood_score == input$user_mood)
+
+    # 计算 sleep_quality 统计数据
+    if (nrow(filtered_data) > 0) {
+      median_quality <- median(filtered_data$sleep_quality, na.rm = TRUE)
+      q1 <- quantile(filtered_data$sleep_quality, 0.25, na.rm = TRUE)  # 25% 分位数
+      q3 <- quantile(filtered_data$sleep_quality, 0.75, na.rm = TRUE)  # 75% 分位数
+      mode_quality <- filtered_data$sleep_quality %>%
+        table() %>%
+        which.max() %>%
+        names() %>%
+        as.numeric()
+      
+      # Sleep Quality 箱线图
+      output$boxplot_sleep <- renderPlot({
+        ggplot(filtered_data, aes(x = as.factor(mood_score), y = sleep_quality, fill = gender)) +
+          geom_boxplot(alpha = 0.6) +
+          labs(title = paste("Sleep Quality Distribution for Mood Score", input$user_mood),
+               x = "Mood Score",
+               y = "Sleep Quality") +
+          theme_minimal()
+      })
+
+      # Sleep Quality density plot
+      output$density_sleep <- renderPlot({
+        ggplot(filtered_data, aes(x = sleep_quality, fill = gender)) +
+          geom_density(alpha = 0.5) +
+          labs(title = paste("Density Plot of Sleep Quality for Mood Score", input$user_mood),
+               x = "Sleep Quality",
+               y = "Density") +
+          theme_minimal()
+      })
+
+      # **box plot des**
+      output$boxplot_interpretation <- renderUI({
+        HTML(paste(
+          "<b>For mood score", input$user_mood, ":</b>",
+          "<br>📊 About <b>50%</b> of people have a sleep quality between <b>", q1, "and", q3, "</b>.",
+          "<br>🛌 The <b>median sleep quality</b> is <b>", median_quality, "</b>, meaning half the people sleep better and half sleep worse."
+        ))
+      })
+
+      # **density plot des**
+      output$density_interpretation <- renderUI({
+        HTML(paste(
+          "<b>The most common sleep quality</b> for mood score", input$user_mood, "is around <b>", mode_quality, "</b>.",
+          "<br>This means that most people with this mood score experience sleep quality near this value."
+        ))
+      })
+      
+    } else {
+      # **没有匹配数据时的反馈**
+      output$boxplot_sleep <- renderPlot({})
+      output$density_sleep <- renderPlot({})
+      output$boxplot_interpretation <- renderUI(HTML("<b>No matching data found.</b> Try another mood score."))
+      output$density_interpretation <- renderUI(HTML("<b>No density distribution available.</b> Try another mood score."))
+    }
+  })
+}
+
+# 运行 Shiny App
+shinyApp(ui = ui, server = server)
+
+```
+
+
+
+
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
