@@ -5,7 +5,9 @@ BIS015 Group Project by Tianchen, Lu, Hanxu and Yitong
 
 GROUP CONTRIBUTIONS  
 Data exploration & presentation – all group members
+
 Shiny App 1: Visibility California – Lu Liang 
+
 Data interpretation & conclusion – all group members
 
 DATA
