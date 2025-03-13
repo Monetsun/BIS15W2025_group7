@@ -8,7 +8,7 @@ output: html_document
 library(tidyverse)
 require(janitor)
 
-sleep <- read_csv("~/Desktop/BIS15W2025_group7/Lu's Folder (#3)/sleep_cycle_productivity.csv") %>% 
+sleep <- read_csv("~/Desktop/BIS15W2025_group7/Shiny App/sleep_cycle_productivity.csv") %>% 
   clean_names()
 sleep2 <- sleep %>%
   filter(gender=="Female" | gender=="Male") %>% 
